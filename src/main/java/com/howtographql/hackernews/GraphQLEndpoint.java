@@ -1,7 +1,8 @@
 package com.howtographql.hackernews;
 
 import com.coxautodev.graphql.tools.SchemaParser;
-import com.mongodb.MongoClient;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import graphql.schema.GraphQLSchema;
 import graphql.servlet.SimpleGraphQLServlet;
@@ -14,8 +15,8 @@ public class GraphQLEndpoint extends SimpleGraphQLServlet {
   private static final LinkRepository linkRepository;
 
   static {
-    // TODO(etagaca): Connect this to a real database.
-    MongoDatabase mongo = new MongoClient().getDatabase("hackernews");
+    MongoClient mongoClient = MongoClients.create("mongodb://localhost:27017");
+    MongoDatabase mongo = mongoClient.getDatabase("hackernews");
     linkRepository = new LinkRepository(mongo.getCollection("links"));
   }
 
