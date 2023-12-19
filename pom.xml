@@ -40,17 +40,16 @@
       <artifactId>mongodb-driver-sync</artifactId>
       <version>4.3.4</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-core -->
-     <!-- <dependency>
-        <groupId>org.mongodb</groupId>
-        <artifactId>mongodb-driver</artifactId>
-        <version>3.4.2</version>
-      </dependency> -->
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-simple</artifactId>
-        <version>1.7.32</version> <!-- Use the latest version -->
-        <scope>runtime</scope>
+    <dependency>
+      <groupId>io.leangen.graphql</groupId>
+      <artifactId>spqr</artifactId>
+      <version>0.9.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>1.7.32</version> <!-- Use the latest version -->
+      <scope>runtime</scope>
     </dependency>
   </dependencies>
   <!-- Force Eclipse and Maven to use a Java 8 JDK compiler-->
@@ -67,15 +66,16 @@
           <version>9.4.6.v20170531</version>
         </plugin>
 
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.5.1</version>
-          <configuration>
-            <source>1.8</source>
-            <target>1.8</target>
-          </configuration>
-        </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.6.1</version>
+        <configuration>
+          <compilerArgs>
+            <arg>-parameters</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
         <plugin>
           <artifactId>maven-war-plugin</artifactId>
           <version>3.1.0</version>

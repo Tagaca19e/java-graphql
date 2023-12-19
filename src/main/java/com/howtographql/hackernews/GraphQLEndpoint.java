@@ -12,17 +12,15 @@ import com.howtographql.hackernews.resolvers.VoteResolver;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
-
 import graphql.ExceptionWhileDataFetching;
 import graphql.GraphQLError;
 import graphql.schema.GraphQLSchema;
 import graphql.servlet.GraphQLContext;
 import graphql.servlet.SimpleGraphQLServlet;
-
+import io.leangen.graphql.GraphQLSchemaGenerator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -45,36 +43,39 @@ public class GraphQLEndpoint extends SimpleGraphQLServlet {
 
   public GraphQLEndpoint() { super(buildSchema()); }
 
-  // TODO(etagaca): Add query for votes.
   private static GraphQLSchema buildSchema() {
-    return SchemaParser.newParser()
-        .file("schema.graphqls")
-        .resolvers(new Query(linkRepository),
-                   new Mutation(linkRepository, userRepository, voteRepository),
-                   new SigninResolver(), new LinkResolver(userRepository),
-                   new VoteResolver(linkRepository, userRepository))
-        .scalars(Scalars.dateTime)
-        .build()
-        .makeExecutableSchema();
+    Query query = new Query(linkRepository);
+    LinkResolver linkResolver = new LinkResolver(userRepository);
+    Mutation mutation =
+        new Mutation(linkRepository, userRepository, voteRepository);
+
+    return new GraphQLSchemaGenerator()
+        .withOperationsFromSingletons(query, linkResolver, mutation)
+        .generate();
   }
 
   @Override
   protected GraphQLContext
   createContext(Optional<HttpServletRequest> request,
-          Optional<HttpServletResponse> response) {
+                Optional<HttpServletResponse> response) {
     User user = request.map(req -> req.getHeader("Authorization"))
-        .filter(id -> !id.isEmpty())
-        .map(id -> id.replace("Bearer", ""))
-        .map(userRepository::findById)
-        .orElse(null);
+                    .filter(id -> !id.isEmpty())
+                    .map(id -> id.replace("Bearer", ""))
+                    .map(userRepository::findById)
+                    .orElse(null);
     return new AuthContext(user, request, response);
   }
-  
+
   @Override
   protected List<GraphQLError> filterGraphQLErrors(List<GraphQLError> errors) {
     return errors.stream()
-        .filter(e -> e instanceof ExceptionWhileDataFetching || super.isClientError(e))
-        .map(e -> e instanceof ExceptionWhileDataFetching ? new SanitizedError((ExceptionWhileDataFetching) e) : e)
+        .filter(e
+                -> e instanceof ExceptionWhileDataFetching ||
+                       super.isClientError(e))
+        .map(e
+             -> e instanceof ExceptionWhileDataFetching
+                    ? new SanitizedError((ExceptionWhileDataFetching)e)
+                    : e)
         .collect(Collectors.toList());
   }
 }

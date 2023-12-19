@@ -10,7 +10,8 @@ import com.howtographql.hackernews.repositories.LinkRepository;
 import com.howtographql.hackernews.repositories.UserRepository;
 import com.howtographql.hackernews.repositories.VoteRepository;
 import graphql.GraphQLException;
-import graphql.schema.DataFetchingEnvironment;
+import io.leangen.graphql.annotations.GraphQLMutation;
+import io.leangen.graphql.annotations.GraphQLRootContext;
 import java.time.Instant;
 import java.time.ZoneOffset;
 
@@ -28,10 +29,10 @@ public class Mutation implements GraphQLRootResolver {
   }
 
   // Creates a link and insert it to links repository.
+  @GraphQLMutation
   public Link createLink(String url, String description,
-                         DataFetchingEnvironment env) {
+                         @GraphQLRootContext AuthContext context) {
     // Get the context and get the userId.
-    AuthContext context = env.getContext();
     Link newLink = new Link(url, description, context.getUser().getId());
     linkRepository.saveLink(newLink);
     return newLink;
