@@ -5,19 +5,25 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import graphql.schema.GraphQLSchema;
+import graphql.servlet.GraphQLContext;
 import graphql.servlet.SimpleGraphQLServlet;
+import java.util.Optional;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 @WebServlet(urlPatterns = "/graphql")
 // Extends to override interfaces.
 public class GraphQLEndpoint extends SimpleGraphQLServlet {
 
   private static final LinkRepository linkRepository;
+  private static final UserRepository userRepository;
 
   static {
     MongoClient mongoClient = MongoClients.create("mongodb://localhost:27017");
     MongoDatabase mongo = mongoClient.getDatabase("hackernews");
     linkRepository = new LinkRepository(mongo.getCollection("links"));
+    userRepository = new UserRepository(mongo.getCollection("users"));
   }
 
   public GraphQLEndpoint() { super(buildSchema()); }
@@ -25,8 +31,23 @@ public class GraphQLEndpoint extends SimpleGraphQLServlet {
   private static GraphQLSchema buildSchema() {
     return SchemaParser.newParser()
         .file("schema.graphqls")
-        .resolvers(new Query(linkRepository), new Mutation(linkRepository))
+        .resolvers(new Query(linkRepository),
+                   new Mutation(linkRepository, userRepository),
+                   new SigninResolver(),
+                   new LinkResolver(userRepository))
         .build()
         .makeExecutableSchema();
+  }
+
+  @Override
+  protected GraphQLContext
+  createContext(Optional<HttpServletRequest> request,
+                Optional<HttpServletResponse> response) {
+    User user = request.map(req -> req.getHeader("Authorization"))
+                    .filter(id -> !id.isEmpty())
+                    .map(id -> id.replace("Bearer", ""))
+                    .map(userRepository::findById)
+                    .orElse(null);
+    return new AuthContext(user, request, response);
   }
 }
