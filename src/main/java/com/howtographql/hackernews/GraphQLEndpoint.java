@@ -1,6 +1,7 @@
 package com.howtographql.hackernews;
 
 import com.coxautodev.graphql.tools.SchemaParser;
+import com.howtographql.hackernews.errorhandling.SanitizedError;
 import com.howtographql.hackernews.pojos.User;
 import com.howtographql.hackernews.repositories.LinkRepository;
 import com.howtographql.hackernews.repositories.UserRepository;
@@ -11,10 +12,17 @@ import com.howtographql.hackernews.resolvers.VoteResolver;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
+
+import graphql.ExceptionWhileDataFetching;
+import graphql.GraphQLError;
 import graphql.schema.GraphQLSchema;
 import graphql.servlet.GraphQLContext;
 import graphql.servlet.SimpleGraphQLServlet;
+
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -53,12 +61,20 @@ public class GraphQLEndpoint extends SimpleGraphQLServlet {
   @Override
   protected GraphQLContext
   createContext(Optional<HttpServletRequest> request,
-                Optional<HttpServletResponse> response) {
+          Optional<HttpServletResponse> response) {
     User user = request.map(req -> req.getHeader("Authorization"))
-                    .filter(id -> !id.isEmpty())
-                    .map(id -> id.replace("Bearer", ""))
-                    .map(userRepository::findById)
-                    .orElse(null);
+        .filter(id -> !id.isEmpty())
+        .map(id -> id.replace("Bearer", ""))
+        .map(userRepository::findById)
+        .orElse(null);
     return new AuthContext(user, request, response);
+  }
+  
+  @Override
+  protected List<GraphQLError> filterGraphQLErrors(List<GraphQLError> errors) {
+    return errors.stream()
+        .filter(e -> e instanceof ExceptionWhileDataFetching || super.isClientError(e))
+        .map(e -> e instanceof ExceptionWhileDataFetching ? new SanitizedError((ExceptionWhileDataFetching) e) : e)
+        .collect(Collectors.toList());
   }
 }
