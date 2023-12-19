@@ -1,22 +1,35 @@
 package com.howtographql.hackernews;
 
 import com.coxautodev.graphql.tools.GraphQLRootResolver;
-
+import com.howtographql.hackernews.pojos.AuthData;
+import com.howtographql.hackernews.pojos.Link;
+import com.howtographql.hackernews.pojos.SigninPayload;
+import com.howtographql.hackernews.pojos.User;
+import com.howtographql.hackernews.pojos.Vote;
+import com.howtographql.hackernews.repositories.LinkRepository;
+import com.howtographql.hackernews.repositories.UserRepository;
+import com.howtographql.hackernews.repositories.VoteRepository;
 import graphql.GraphQLException;
 import graphql.schema.DataFetchingEnvironment;
+import java.time.Instant;
+import java.time.ZoneOffset;
 
 public class Mutation implements GraphQLRootResolver {
-  
+
   private final LinkRepository linkRepository;
   private final UserRepository userRepository;
+  private final VoteRepository voteRepository;
 
-  public Mutation(LinkRepository linkRepository, UserRepository userRepository) {
+  public Mutation(LinkRepository linkRepository, UserRepository userRepository,
+                  VoteRepository voteRepository) {
     this.linkRepository = linkRepository;
     this.userRepository = userRepository;
+    this.voteRepository = voteRepository;
   }
 
   // Creates a link and insert it to links repository.
-  public Link createLink(String url, String description, DataFetchingEnvironment env) {
+  public Link createLink(String url, String description,
+                         DataFetchingEnvironment env) {
     // Get the context and get the userId.
     AuthContext context = env.getContext();
     Link newLink = new Link(url, description, context.getUser().getId());
@@ -36,5 +49,10 @@ public class Mutation implements GraphQLRootResolver {
       return new SigninPayload(user.getId(), user);
     }
     throw new GraphQLException("Invalid credentials");
+  }
+
+  public Vote createVote(String linkId, String userId) {
+    return voteRepository.saveVote(
+        new Vote(Instant.now().atZone(ZoneOffset.UTC), userId, linkId));
   }
 }

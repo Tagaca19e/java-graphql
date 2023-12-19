@@ -1,6 +1,13 @@
 package com.howtographql.hackernews;
 
 import com.coxautodev.graphql.tools.SchemaParser;
+import com.howtographql.hackernews.pojos.User;
+import com.howtographql.hackernews.repositories.LinkRepository;
+import com.howtographql.hackernews.repositories.UserRepository;
+import com.howtographql.hackernews.repositories.VoteRepository;
+import com.howtographql.hackernews.resolvers.LinkResolver;
+import com.howtographql.hackernews.resolvers.SigninResolver;
+import com.howtographql.hackernews.resolvers.VoteResolver;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
@@ -18,23 +25,27 @@ public class GraphQLEndpoint extends SimpleGraphQLServlet {
 
   private static final LinkRepository linkRepository;
   private static final UserRepository userRepository;
+  private static final VoteRepository voteRepository;
 
   static {
     MongoClient mongoClient = MongoClients.create("mongodb://localhost:27017");
     MongoDatabase mongo = mongoClient.getDatabase("hackernews");
     linkRepository = new LinkRepository(mongo.getCollection("links"));
     userRepository = new UserRepository(mongo.getCollection("users"));
+    voteRepository = new VoteRepository(mongo.getCollection("votes"));
   }
 
   public GraphQLEndpoint() { super(buildSchema()); }
 
+  // TODO(etagaca): Add query for votes.
   private static GraphQLSchema buildSchema() {
     return SchemaParser.newParser()
         .file("schema.graphqls")
         .resolvers(new Query(linkRepository),
-                   new Mutation(linkRepository, userRepository),
-                   new SigninResolver(),
-                   new LinkResolver(userRepository))
+                   new Mutation(linkRepository, userRepository, voteRepository),
+                   new SigninResolver(), new LinkResolver(userRepository),
+                   new VoteResolver(linkRepository, userRepository))
+        .scalars(Scalars.dateTime)
         .build()
         .makeExecutableSchema();
   }

@@ -1,5 +1,6 @@
 package com.howtographql.hackernews;
 
+import com.howtographql.hackernews.pojos.User;
 import graphql.servlet.GraphQLContext;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;

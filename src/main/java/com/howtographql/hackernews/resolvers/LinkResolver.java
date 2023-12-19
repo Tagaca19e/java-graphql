@@ -1,6 +1,9 @@
-package com.howtographql.hackernews;
+package com.howtographql.hackernews.resolvers;
 
 import com.coxautodev.graphql.tools.GraphQLResolver;
+import com.howtographql.hackernews.pojos.Link;
+import com.howtographql.hackernews.pojos.User;
+import com.howtographql.hackernews.repositories.UserRepository;
 
 public class LinkResolver implements GraphQLResolver<Link> {
 

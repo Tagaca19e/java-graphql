@@ -1,7 +1,8 @@
-package com.howtographql.hackernews;
+package com.howtographql.hackernews.repositories;
 
 import static com.mongodb.client.model.Filters.eq;
 
+import com.howtographql.hackernews.pojos.User;
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
 import org.bson.types.ObjectId;
