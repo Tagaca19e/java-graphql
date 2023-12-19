@@ -6,6 +6,7 @@ import static com.mongodb.client.model.Filters.regex;
 
 import com.howtographql.hackernews.pojos.Link;
 import com.howtographql.hackernews.pojos.LinkFilter;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,13 +26,15 @@ public class LinkRepository {
     return link(doc);
   }
 
-  public List<Link> getAllLinks(LinkFilter filter) {
+  public List<Link> getAllLinks(LinkFilter filter, int skip, int first) {
     // Optional since filter could be nullable.
     Optional<Bson> mongoFilter =
         Optional.ofNullable(filter).map(this::buildFilter);
 
     List<Link> allLinks = new ArrayList<>();
-    for (Document doc : mongoFilter.map(links::find).orElseGet(links::find)) {
+    FindIterable<Document> documents =
+        mongoFilter.map(links::find).orElseGet(links::find);
+    for (Document doc : documents.skip(skip).limit(first)) {
       allLinks.add(link(doc));
     }
     return allLinks;
